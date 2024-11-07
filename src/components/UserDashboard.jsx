@@ -1,133 +1,323 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
 
-export default function UserDashboard() {
-  const [requests, setRequests] = useState([]);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    pickupLocation: '',
-    destination: '',
-    vehicleDetails: ''
+const UserDashboard = () => {
+  const [vehicleDetails, setVehicleDetails] = useState({
+    make: '',
+    model: '',
+    year: '',
+    registration: '',
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submissionStatus, setSubmissionStatus] = useState(null);
 
-  // Simulating fetching user requests from an API or state
-  useEffect(() => {
-    // Here you would make an API call to fetch the user's service requests
-    setRequests([
-      { id: 1, pickupLocation: 'Location 1', status: 'Pending' },
-      { id: 2, pickupLocation: 'Location 2', status: 'Pending' },
-    ]);
-  }, []);
+  const [location, setLocation] = useState('');
+  const [serviceType, setServiceType] = useState('');
+  const [requestStatus, setRequestStatus] = useState('');
+  const [review, setReview] = useState('');
+  const [complaint, setComplaint] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeSection, setActiveSection] = useState('requestService');
+  const [paymentStatus, setPaymentStatus] = useState('');
+  const [requestHistory, setRequestHistory] = useState([]);
 
-  const handleRequestChange = (e) => {
+  // Sample data for services
+  const services = [
+    { id: 1, type: 'towing', name: 'Car Towing' },
+    { id: 2, type: 'mechanical', name: 'Flat Tire Fix' },
+    { id: 3, type: 'towing', name: 'Heavy Duty Towing' },
+    { id: 4, type: 'mechanical', name: 'Engine Diagnostics' },
+    { id: 5, type: 'mechanical', name: 'Battery Jumpstart' },
+  ];
+
+  const handleVehicleDetailsChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setVehicleDetails((prevDetails) => ({
+      ...prevDetails,
+      [name]: value,
+    }));
   };
 
-  const handleSubmitRequest = (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+  const handleServiceRequest = () => {
+    if (!serviceType) {
+      alert('Please select a service first!');
+      return;
+    }
 
-    // Simulate sending the request to an API
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setRequests([...requests, { ...formData, status: 'Pending' }]);
-      setSubmissionStatus('Request submitted successfully!');
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        pickupLocation: '',
-        destination: '',
-        vehicleDetails: ''
-      });
-    }, 2000);
+    setRequestStatus('Request sent!');
+    setPaymentStatus('Pending'); // Set payment status to pending initially
+
+    const newRequest = {
+      id: Date.now(),
+      service: serviceType,
+      status: 'Requested',
+      paymentStatus: 'Pending',
+      review: review || 'No review provided', // Include review
+      complaint: '', // Initialize empty complaint
+      date: new Date().toLocaleString(), // Add date of request
+    };
+
+    setRequestHistory((prevHistory) => [...prevHistory, newRequest]);
+  };
+
+  const handlePayment = (requestId) => {
+    setPaymentStatus('Completed');
+    setRequestHistory((prevHistory) =>
+      prevHistory.map((request) =>
+        request.id === requestId ? { ...request, paymentStatus: 'Completed' } : request
+      )
+    );
+    alert('Payment successful!');
+  };
+
+  const handleSubmitReview = (requestId) => {
+    setRequestHistory((prevHistory) =>
+      prevHistory.map((request) =>
+        request.id === requestId ? { ...request, review } : request
+      )
+    );
+    alert('Review submitted!');
+  };
+
+  const handleSubmitComplaint = (requestId) => {
+    setRequestHistory((prevHistory) =>
+      prevHistory.map((request) =>
+        request.id === requestId ? { ...request, complaint } : request
+      )
+    );
+    alert('Complaint submitted!');
+  };
+
+  const filteredServices = services.filter(service =>
+    service.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const renderSection = () => {
+    switch (activeSection) {
+      case 'requestService':
+        return (
+          <div>
+            <h3 className="text-lg">Request Service</h3>
+
+            {/* Vehicle Details Form */}
+            <div className="mt-4">
+              <h4 className="text-md">Vehicle Details</h4>
+              <input
+                type="text"
+                name="make"
+                placeholder="Make"
+                className="p-2 border mt-2 w-full"
+                value={vehicleDetails.make}
+                onChange={handleVehicleDetailsChange}
+              />
+              <input
+                type="text"
+                name="model"
+                placeholder="Model"
+                className="p-2 border mt-2 w-full"
+                value={vehicleDetails.model}
+                onChange={handleVehicleDetailsChange}
+              />
+              <input
+                type="text"
+                name="year"
+                placeholder="Year"
+                className="p-2 border mt-2 w-full"
+                value={vehicleDetails.year}
+                onChange={handleVehicleDetailsChange}
+              />
+              <input
+                type="text"
+                name="registration"
+                placeholder="Registration Number"
+                className="p-2 border mt-2 w-full"
+                value={vehicleDetails.registration}
+                onChange={handleVehicleDetailsChange}
+              />
+            </div>
+
+            {/* Search field for services */}
+            <input
+              type="text"
+              placeholder="Search for Towing or Mechanical services"
+              className="p-2 border mt-2 w-full"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+
+            {/* Display filtered services */}
+            <div className="mt-4">
+              {filteredServices.length > 0 ? (
+                filteredServices.map((service) => (
+                  <div key={service.id} className="border-b py-2">
+                    <button
+                      onClick={() => setServiceType(service.name)}
+                      className="w-full text-left p-2 hover:bg-gray-200 rounded"
+                    >
+                      {service.name}
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <p>No services found.</p>
+              )}
+            </div>
+
+            {/* Selected service */}
+            {serviceType && (
+              <div className="mt-4">
+                <h4 className="text-lg">Selected Service: {serviceType}</h4>
+                <button
+                  onClick={handleServiceRequest}
+                  className="bg-blue-500 text-white py-2 px-4 rounded mt-4"
+                >
+                  Request Service
+                </button>
+              </div>
+            )}
+          </div>
+        );
+
+      case 'review':
+        return (
+          <div>
+            <h4 className="text-md">Leave a Review</h4>
+            <textarea
+              placeholder="Write your review..."
+              className="p-2 border mt-2 w-full"
+              value={review}
+              onChange={(e) => setReview(e.target.value)}
+            />
+            <button
+              onClick={() => handleSubmitReview(Date.now())}
+              className="bg-blue-500 text-white py-2 px-4 rounded mt-4"
+            >
+              Submit Review
+            </button>
+          </div>
+        );
+
+      case 'complaint':
+        return (
+          <div>
+            <h4 className="text-md">File a Complaint</h4>
+            <textarea
+              placeholder="Write your complaint..."
+              className="p-2 border mt-2 w-full"
+              value={complaint}
+              onChange={(e) => setComplaint(e.target.value)}
+            />
+            <button
+              onClick={() => handleSubmitComplaint(Date.now())}
+              className="bg-red-500 text-white py-2 px-4 rounded mt-4"
+            >
+              Submit Complaint
+            </button>
+          </div>
+        );
+
+      case 'payment':
+        return (
+          <div>
+            {paymentStatus === 'Pending' ? (
+              <button
+                onClick={() => handlePayment(Date.now())}
+                className="bg-green-500 text-white py-2 px-4 rounded"
+              >
+                Pay Now
+              </button>
+            ) : (
+              <p>Payment Status: {paymentStatus}</p>
+            )}
+          </div>
+        );
+
+      case 'requestHistory':
+        return (
+          <div>
+            <h3 className="text-lg">Request History</h3>
+            <div className="mt-4">
+              {requestHistory.length === 0 ? (
+                <p>No requests made yet.</p>
+              ) : (
+                requestHistory.map((request) => (
+                  <div key={request.id} className="border-b py-2">
+                    <h4 className="font-bold">Service: {request.service}</h4>
+                    <p>Status: {request.status}</p>
+                    <p>Payment Status: {request.paymentStatus}</p>
+                    <p>Requested On: {request.date}</p>
+                    <p>Review: {request.review}</p>
+                    {request.complaint && <p>Complaint: {request.complaint}</p>}
+                    <button
+                      onClick={() => setComplaint('')}
+                      className="bg-red-500 text-white py-2 px-4 rounded mt-2"
+                    >
+                      Add Complaint
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        );
+
+      default:
+        return <div>Please select an option from the sidebar</div>;
+    }
   };
 
   return (
-    <div className="p-8 max-w-lg mx-auto bg-gray-800 rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold text-center mb-6">User Dashboard</h2>
-
-      <h3 className="text-xl font-semibold text-center mb-4">Your Requests</h3>
-      <ul>
-        {requests.map((request) => (
-          <li key={request.id} className="bg-gray-700 p-4 rounded-lg mb-2">
-            <p><strong>Pickup Location:</strong> {request.pickupLocation}</p>
-            <p><strong>Status:</strong> {request.status}</p>
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
+      <div className="w-1/4 bg-gray-800 text-white p-4 min-h-screen">
+        <h3 className="text-lg font-bold">Dashboard Menu</h3>
+        <ul className="mt-6 space-y-4">
+          <li>
+            <button
+              onClick={() => setActiveSection('requestService')}
+              className={`w-full text-left p-2 hover:bg-gray-700 rounded ${activeSection === 'requestService' ? 'bg-gray-700' : ''}`}
+            >
+              Request Service
+            </button>
           </li>
-        ))}
-      </ul>
+          <li>
+            <button
+              onClick={() => setActiveSection('requestHistory')}
+              className={`w-full text-left p-2 hover:bg-gray-700 rounded ${activeSection === 'requestHistory' ? 'bg-gray-700' : ''}`}
+            >
+              Request History
+            </button>
+          </li>
+          <li>
+            <button
+              onClick={() => setActiveSection('review')}
+              className={`w-full text-left p-2 hover:bg-gray-700 rounded ${activeSection === 'review' ? 'bg-gray-700' : ''}`}
+            >
+              Leave a Review
+            </button>
+          </li>
+          <li>
+            <button
+              onClick={() => setActiveSection('complaint')}
+              className={`w-full text-left p-2 hover:bg-gray-700 rounded ${activeSection === 'complaint' ? 'bg-gray-700' : ''}`}
+            >
+              File a Complaint
+            </button>
+          </li>
+          <li>
+            <button
+              onClick={() => setActiveSection('payment')}
+              className={`w-full text-left p-2 hover:bg-gray-700 rounded ${activeSection === 'payment' ? 'bg-gray-700' : ''}`}
+            >
+              Payment
+            </button>
+          </li>
+        </ul>
+      </div>
 
-      <h3 className="text-xl font-semibold text-center mt-6 mb-4">Book a New Ride</h3>
-      <form onSubmit={handleSubmitRequest} className="space-y-4">
-        <input
-          type="text"
-          name="name"
-          placeholder="Name"
-          value={formData.name}
-          onChange={handleRequestChange}
-          className="w-full px-4 py-2 border border-gray-600 rounded bg-gray-900 text-white"
-          required
-        />
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={formData.email}
-          onChange={handleRequestChange}
-          className="w-full px-4 py-2 border border-gray-600 rounded bg-gray-900 text-white"
-          required
-        />
-        <input
-          type="tel"
-          name="phone"
-          placeholder="Phone"
-          value={formData.phone}
-          onChange={handleRequestChange}
-          className="w-full px-4 py-2 border border-gray-600 rounded bg-gray-900 text-white"
-          required
-        />
-        <input
-          type="text"
-          name="pickupLocation"
-          placeholder="Pickup Location"
-          value={formData.pickupLocation}
-          onChange={handleRequestChange}
-          className="w-full px-4 py-2 border border-gray-600 rounded bg-gray-900 text-white"
-          required
-        />
-        <input
-          type="text"
-          name="destination"
-          placeholder="Destination"
-          value={formData.destination}
-          onChange={handleRequestChange}
-          className="w-full px-4 py-2 border border-gray-600 rounded bg-gray-900 text-white"
-          required
-        />
-        <input
-          type="text"
-          name="vehicleDetails"
-          placeholder="Vehicle Details (Make/Model)"
-          value={formData.vehicleDetails}
-          onChange={handleRequestChange}
-          className="w-full px-4 py-2 border border-gray-600 rounded bg-gray-900 text-white"
-          required
-        />
-        <button
-          type="submit"
-          className={`w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg transition-all duration-200 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? 'Submitting...' : 'Book Now'}
-        </button>
-      </form>
-
-      {submissionStatus && <p className="mt-4 text-green-500">{submissionStatus}</p>}
+      {/* Content */}
+      <div className="w-3/4 p-4">
+        {renderSection()}
+      </div>
     </div>
   );
-}
+};
+
+export default UserDashboard;

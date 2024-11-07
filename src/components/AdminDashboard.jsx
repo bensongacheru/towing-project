@@ -1,305 +1,333 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 
-export default function AdminDashboard() {
-  const navigate = useNavigate();
+const AdminDashboard = () => {
+  const [notifications, setNotifications] = useState([]);
+  const [selectedUser, setSelectedUser] = useState('');
+  const [selectedMechanic, setSelectedMechanic] = useState('');
+  const [issueDescription, setIssueDescription] = useState('');
+  const [selectedSection, setSelectedSection] = useState('notifications');
+  
+  const [users, setUsers] = useState([
+    { id: 1, name: 'John Doe', type: 'User' },
+    { id: 2, name: 'Jane Smith', type: 'User' },
+  ]);
+  
+  const [mechanics, setMechanics] = useState([
+    { id: 1, name: 'Mike Johnson', type: 'Mechanic' },
+    { id: 2, name: 'Sara Lee', type: 'Mechanic' },
+  ]);
+  
+  const [servicesStatus, setServicesStatus] = useState([
+    { id: 1, serviceName: 'Towing Service', status: 'Ongoing' },
+    { id: 2, serviceName: 'Mechanical Service', status: 'Completed' },
+  ]);
+  
+  const [reviews, setReviews] = useState([
+    { id: 1, user: 'John Doe', review: 'Great service!' },
+    { id: 2, user: 'Jane Smith', review: 'Fast response time.' },
+  ]);
+  
+  const [complaints, setComplaints] = useState([
+    { id: 1, user: 'John Doe', complaint: 'Service delayed.' },
+    { id: 2, user: 'Jane Smith', complaint: 'Not satisfied with the mechanic.' },
+  ]);
+  
+  const [payments, setPayments] = useState([
+    { id: 1, user: 'John Doe', amount: 50, status: 'Completed' },
+    { id: 2, user: 'Jane Smith', amount: 75, status: 'Pending' },
+  ]);
+  
+  const [userRequests, setUserRequests] = useState([
+    { id: 1, user: 'John Doe', service: 'Towing Service', status: 'Completed', date: '2024-10-01' },
+    { id: 2, user: 'Jane Smith', service: 'Mechanical Service', status: 'Pending', date: '2024-10-05' },
+  ]);
 
-  // State for adding a driver
-  const [isAddingDriver, setIsAddingDriver] = useState(false);
-  const [drivers, setDrivers] = useState([]);
-  const [requests, setRequests] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [newDriver, setNewDriver] = useState({ name: '', vehicle: '', status: 'Active' });
-  const [currentSection, setCurrentSection] = useState('dashboard');
-  const [currentCategory, setCurrentCategory] = useState(''); // Track the category for filtered requests
-
-  // Example data for drivers and requests
-  const exampleDrivers = [
-    { name: 'John Doe', vehicle: 'Truck A', status: 'Active' },
-    { name: 'Jane Smith', vehicle: 'Truck B', status: 'Inactive' },
-  ];
-
-  const exampleRequests = [
-    { name: 'Alice', email: 'alice@example.com', mobile: '1234567890', status: 'Approved', lastAction: 'Created Request' },
-    { name: 'Bob', email: 'bob@example.com', mobile: '0987654321', status: 'On the way', lastAction: 'Assigned Driver' },
-    { name: 'Charlie', email: 'charlie@example.com', mobile: '1122334455', status: 'Rejected', lastAction: 'Cancelled Request' },
-    { name: 'Daisy', email: 'daisy@example.com', mobile: '6677889900', status: 'Completed', lastAction: 'Delivered' },
-  ];
-
-  // Fetch data (in a real app, you would fetch this from your API)
-  useEffect(() => {
-    setDrivers(exampleDrivers);
-    setRequests(exampleRequests);
-  }, []);
-
-  // Filter requests based on search query
-  const filteredRequests = requests.filter((request) => {
-    return (
-      request.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.mobile.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  });
-
-  // Filter requests by status category
-  const getFilteredRequestsByCategory = () => {
-    if (currentCategory === 'Approved') {
-      return requests.filter((req) => req.status === 'Approved');
-    } else if (currentCategory === 'Rejected') {
-      return requests.filter((req) => req.status === 'Rejected');
-    } else if (currentCategory === 'On the way') {
-      return requests.filter((req) => req.status === 'On the way');
-    } else if (currentCategory === 'Completed') {
-      return requests.filter((req) => req.status === 'Completed');
-    } else {
-      return requests; // Return all requests by default
+  const handleSendNotification = () => {
+    if ((!selectedUser && !selectedMechanic) || !issueDescription) {
+      alert('Please select a user/mechanic and provide an issue description.');
+      return;
     }
+
+    const target = selectedUser || selectedMechanic;
+    setNotifications((prevState) => [
+      ...prevState,
+      `Notified ${target} about: ${issueDescription}`,
+    ]);
+    setIssueDescription('');
+    setSelectedUser('');
+    setSelectedMechanic('');
   };
 
-  // Add a new driver handler
-  const addDriverHandler = () => {
-    if (newDriver.name && newDriver.vehicle) {
-      setDrivers([...drivers, newDriver]); // Adds the new driver to the list
-      setNewDriver({ name: '', vehicle: '', status: 'Active' }); // Reset the new driver form
-      setIsAddingDriver(false); // Close the "Add Driver" form
-    } else {
-      alert('Please fill in the driver details');
-    }
-  };
-
-  // Handle input changes for new driver form
-  const handleDriverChange = (e) => {
-    const { name, value } = e.target;
-    setNewDriver((prevDriver) => ({
-      ...prevDriver,
-      [name]: value,
-    }));
-  };
-
-  // Function to handle button click and set the current section and category
-  const handleNavigation = (section, category = '') => {
-    setCurrentSection(section);
-    setCurrentCategory(category); // Set the category when navigating to requests view
-  };
-
-  // Render View Details Table for Requests
-  const renderRequestDetails = () => {
-    const filteredByCategory = getFilteredRequestsByCategory();
-    return (
-      <div className="overflow-x-auto shadow-lg rounded-md bg-white">
-        <table className="min-w-full table-auto">
-          <thead className="bg-gray-800 text-white">
-            <tr>
-              <th className="py-3 px-4">S/No</th>
-              <th className="py-3 px-4">Name</th>
-              <th className="py-3 px-4">Mobile</th>
-              <th className="py-3 px-4">Email</th>
-              <th className="py-3 px-4">Status</th>
-              <th className="py-3 px-4">Last Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredByCategory.map((req, index) => (
-              <tr key={index} className="border-b">
-                <td className="py-3 px-4">{index + 1}</td>
-                <td className="py-3 px-4">{req.name}</td>
-                <td className="py-3 px-4">{req.mobile}</td>
-                <td className="py-3 px-4">{req.email}</td>
-                <td className="py-3 px-4">{req.status}</td>
-                <td className="py-3 px-4">{req.lastAction}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+  const handleServiceStatusUpdate = (id, newStatus) => {
+    setServicesStatus((prevState) =>
+      prevState.map((service) =>
+        service.id === id ? { ...service, status: newStatus } : service
+      )
     );
   };
 
-  // Render View Details Table for Drivers
-  const renderDriverDetails = () => {
-    return (
-      <div className="overflow-x-auto shadow-lg rounded-md bg-white">
-        <table className="min-w-full table-auto">
-          <thead className="bg-gray-800 text-white">
-            <tr>
-              <th className="py-3 px-4">S/No</th>
-              <th className="py-3 px-4">Name</th>
-              <th className="py-3 px-4">Vehicle</th>
-              <th className="py-3 px-4">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {drivers.map((driver, index) => (
-              <tr key={index} className="border-b">
-                <td className="py-3 px-4">{index + 1}</td>
-                <td className="py-3 px-4">{driver.name}</td>
-                <td className="py-3 px-4">{driver.vehicle}</td>
-                <td className="py-3 px-4">{driver.status}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
+  const handleRemoveUser = (id) => {
+    setUsers((prevState) => prevState.filter((user) => user.id !== id));
+    setMechanics((prevState) => prevState.filter((mechanic) => mechanic.id !== id));
   };
-
-  // Calculate counts for each category
-  const approvedRequests = requests.filter((req) => req.status === 'Approved').length;
-  const rejectedRequests = requests.filter((req) => req.status === 'Rejected').length;
-  const onTheWayRequests = requests.filter((req) => req.status === 'On the way').length;
-  const completedRequests = requests.filter((req) => req.status === 'Completed').length;
 
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
-      <div className="w-1/4 bg-gray-800 text-white p-5">
-        <div className="mb-6">
+      <div className="w-1/4 bg-gray-800 text-white p-4 flex flex-col justify-between">
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold mb-6">Admin Dashboard</h2>
           <button
-            onClick={() => handleNavigation('dashboard')}
-            className="text-lg hover:text-green-500"
+            className="w-full py-2 px-4 bg-blue-500 rounded"
+            onClick={() => setSelectedSection('notifications')}
           >
-            Dashboard
+            Notifications
           </button>
-        </div>
-        <div className="mb-6">
           <button
-            onClick={() => setIsAddingDriver((prev) => !prev)} // Toggle visibility of Add Driver form
-            className="w-full py-2 px-4 bg-gray-700 hover:bg-green-500 text-white rounded-md focus:outline-none"
+            className="w-full py-2 px-4 bg-red-500 rounded"
+            onClick={() => setSelectedSection('reportIssue')}
           >
-            {isAddingDriver ? 'Cancel Add Driver' : 'Add Driver'}
+            Report an Issue
           </button>
-        </div>
-        <div className="mb-6">
           <button
-            onClick={() => handleNavigation('viewDrivers')}
-            className="w-full py-2 px-4 bg-gray-700 hover:bg-green-500 text-white rounded-md focus:outline-none"
+            className="w-full py-2 px-4 bg-yellow-500 rounded"
+            onClick={() => setSelectedSection('serviceStatus')}
           >
-            View Drivers
+            Service Status
           </button>
-        </div>
-        <div className="mb-6">
           <button
-            onClick={() => handleNavigation('viewRequests')}
-            className="w-full py-2 px-4 bg-gray-700 hover:bg-green-500 text-white rounded-md focus:outline-none"
+            className="w-full py-2 px-4 bg-green-500 rounded"
+            onClick={() => setSelectedSection('reviews')}
           >
-            View Requests
+            Reviews
           </button>
-        </div>
-        <div className="mb-6">
           <button
-            onClick={() => handleNavigation('driverProgram')}
-            className="w-full py-2 px-4 bg-gray-700 hover:bg-green-500 text-white rounded-md focus:outline-none"
+            className="w-full py-2 px-4 bg-purple-500 rounded"
+            onClick={() => setSelectedSection('complaints')}
           >
-            Driver Program
+            Complaints
+          </button>
+          <button
+            className="w-full py-2 px-4 bg-teal-500 rounded"
+            onClick={() => setSelectedSection('payments')}
+          >
+            Payments
+          </button>
+          <button
+            className="w-full py-2 px-4 bg-gray-600 rounded"
+            onClick={() => setSelectedSection('manageUsers')}
+          >
+            Manage Users/Mechanics
+          </button>
+          <button
+            className="w-full py-2 px-4 bg-blue-700 rounded"
+            onClick={() => setSelectedSection('userRequests')}
+          >
+            User Requests
           </button>
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="w-3/4 p-6">
-        {/* Add Driver Form */}
-        {isAddingDriver && (
-          <div className="bg-white p-6 rounded-md shadow-lg mb-6">
-            <h3 className="text-xl font-semibold mb-4">Add New Driver</h3>
-            <div className="mb-4">
-              <input
-                type="text"
-                name="name"
-                value={newDriver.name}
-                onChange={handleDriverChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                placeholder="Driver Name"
-              />
-            </div>
-            <div className="mb-4">
-              <input
-                type="text"
-                name="vehicle"
-                value={newDriver.vehicle}
-                onChange={handleDriverChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                placeholder="Vehicle"
-              />
-            </div>
-            <div className="mb-4">
+      {/* Content Area */}
+      <div className="w-3/4 p-6 overflow-y-auto">
+        {selectedSection === 'notifications' && (
+          <div>
+            <h3 className="text-xl font-semibold">Notifications</h3>
+            <ul>
+              {notifications.map((notif, index) => (
+                <li key={index} className="mt-2">{notif}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {selectedSection === 'reportIssue' && (
+          <div>
+            <h3 className="text-xl font-semibold">Report an Issue</h3>
+            <div className="mt-4">
+              <label className="block">Select User:</label>
               <select
-                name="status"
-                value={newDriver.status}
-                onChange={handleDriverChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                className="mt-2 p-2 border rounded"
+                value={selectedUser}
+                onChange={(e) => setSelectedUser(e.target.value)}
               >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
+                <option value="">Select User</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.name}>
+                    {user.name} ({user.type})
+                  </option>
+                ))}
               </select>
             </div>
-            <button
-              onClick={addDriverHandler}
-              className="w-full py-2 px-4 bg-green-500 text-white rounded-md"
-            >
-              Add Driver
-            </button>
-          </div>
-        )}
 
-        {/* Dashboard Boxes */}
-        {currentSection === 'dashboard' && (
-          <div className="grid grid-cols-2 gap-6">
-            {/* Box 1: Approved Requests */}
-            <div
-              className="bg-green-700 p-6 rounded-md text-white cursor-pointer"
-              onClick={() => handleNavigation('viewRequests', 'Approved')}
-            >
-              <h3 className="text-lg font-semibold">Approved Requests</h3>
-              <div className="mt-4 text-2xl font-bold">{approvedRequests}</div>
-              <button className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md">View Details</button>
+            <div className="mt-4">
+              <label className="block">Select Mechanic:</label>
+              <select
+                className="mt-2 p-2 border rounded"
+                value={selectedMechanic}
+                onChange={(e) => setSelectedMechanic(e.target.value)}
+              >
+                <option value="">Select Mechanic</option>
+                {mechanics.map((mechanic) => (
+                  <option key={mechanic.id} value={mechanic.name}>
+                    {mechanic.name} ({mechanic.type})
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* Box 2: Rejected Requests */}
-            <div
-              className="bg-red-700 p-6 rounded-md text-white cursor-pointer"
-              onClick={() => handleNavigation('viewRequests', 'Rejected')}
-            >
-              <h3 className="text-lg font-semibold">Rejected Requests</h3>
-              <div className="mt-4 text-2xl font-bold">{rejectedRequests}</div>
-              <button className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md">View Details</button>
+            <div className="mt-4">
+              <label className="block">Issue Description:</label>
+              <textarea
+                className="mt-2 p-2 border rounded w-full"
+                value={issueDescription}
+                onChange={(e) => setIssueDescription(e.target.value)}
+                placeholder="Describe the issue"
+              />
             </div>
 
-            {/* Box 3: Driver On The Way */}
-            <div
-              className="bg-yellow-700 p-6 rounded-md text-white cursor-pointer"
-              onClick={() => handleNavigation('viewRequests', 'On the way')}
-            >
-              <h3 className="text-lg font-semibold">Driver On The Way</h3>
-              <div className="mt-4 text-2xl font-bold">{onTheWayRequests}</div>
-              <button className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md">View Details</button>
-            </div>
-
-            {/* Box 4: Completed Requests */}
-            <div
-              className="bg-blue-700 p-6 rounded-md text-white cursor-pointer"
-              onClick={() => handleNavigation('viewRequests', 'Completed')}
-            >
-              <h3 className="text-lg font-semibold">Completed Requests</h3>
-              <div className="mt-4 text-2xl font-bold">{completedRequests}</div>
-              <button className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md">View Details</button>
-            </div>
-
-            {/* Box 5: Total Drivers */}
-            <div
-              className="bg-gray-700 p-6 rounded-md text-white cursor-pointer"
-              onClick={() => handleNavigation('viewDrivers')}
-            >
-              <h3 className="text-lg font-semibold">Total Drivers</h3>
-              <div className="mt-4 text-2xl font-bold">{drivers.length}</div>
-              <button className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md">View Details</button>
+            <div className="mt-4">
+              <button
+                onClick={handleSendNotification}
+                className="bg-red-500 text-white py-2 px-6 rounded"
+              >
+                Send Notification
+              </button>
             </div>
           </div>
         )}
 
-        {/* Render Content Based on Current Section */}
-        {currentSection === 'viewRequests' && renderRequestDetails()}
-        {currentSection === 'viewDrivers' && renderDriverDetails()}
+        {selectedSection === 'serviceStatus' && (
+          <div>
+            <h3 className="text-xl font-semibold">Service Status</h3>
+            <ul>
+              {servicesStatus.map((service) => (
+                <li key={service.id} className="p-2 border-b">
+                  {service.serviceName} - Status: {service.status}
+                  <button
+                    className="ml-4 text-blue-500"
+                    onClick={() => handleServiceStatusUpdate(service.id, 'Completed')}
+                  >
+                    Mark as Completed
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {selectedSection === 'reviews' && (
+          <div>
+            <h3 className="text-xl font-semibold">Reviews</h3>
+            <ul>
+              {reviews.map((review) => (
+                <li key={review.id} className="p-2 border-b">
+                  {review.user}: {review.review}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {selectedSection === 'complaints' && (
+          <div>
+            <h3 className="text-xl font-semibold">Complaints</h3>
+            <ul>
+              {complaints.map((complaint) => (
+                <li key={complaint.id} className="p-2 border-b">
+                  {complaint.user}: {complaint.complaint}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {selectedSection === 'payments' && (
+          <div>
+            <h3 className="text-xl font-semibold">Payments</h3>
+            <table className="min-w-full mt-4">
+              <thead>
+                <tr>
+                  <th className="border px-4 py-2">User</th>
+                  <th className="border px-4 py-2">Amount</th>
+                  <th className="border px-4 py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payments.map((payment) => (
+                  <tr key={payment.id}>
+                    <td className="border px-4 py-2">{payment.user}</td>
+                    <td className="border px-4 py-2">${payment.amount}</td>
+                    <td className="border px-4 py-2">{payment.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {selectedSection === 'manageUsers' && (
+          <div>
+            <h3 className="text-xl font-semibold">Manage Users/Mechanics</h3>
+            <h4 className="mt-4 font-semibold">Users</h4>
+            <ul>
+              {users.map((user) => (
+                <li key={user.id} className="p-2 border-b flex justify-between">
+                  {user.name} ({user.type})
+                  <button
+                    className="text-red-500"
+                    onClick={() => handleRemoveUser(user.id)}
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <h4 className="mt-4 font-semibold">Mechanics</h4>
+            <ul>
+              {mechanics.map((mechanic) => (
+                <li key={mechanic.id} className="p-2 border-b flex justify-between">
+                  {mechanic.name} ({mechanic.type})
+                  <button
+                    className="text-red-500"
+                    onClick={() => handleRemoveUser(mechanic.id)}
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {selectedSection === 'userRequests' && (
+          <div>
+            <h3 className="text-xl font-semibold">User Requests</h3>
+            <table className="min-w-full mt-4">
+              <thead>
+                <tr>
+                  <th className="border px-4 py-2">User</th>
+                  <th className="border px-4 py-2">Service</th>
+                  <th className="border px-4 py-2">Status</th>
+                  <th className="border px-4 py-2">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {userRequests.map((request) => (
+                  <tr key={request.id}>
+                    <td className="border px-4 py-2">{request.user}</td>
+                    <td className="border px-4 py-2">{request.service}</td>
+                    <td className="border px-4 py-2">{request.status}</td>
+                    <td className="border px-4 py-2">{request.date}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
-}
+};
+
+export default AdminDashboard;
